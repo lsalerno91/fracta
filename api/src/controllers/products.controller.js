@@ -102,14 +102,23 @@ export const countProductsPerCategory = async (req, res) => {
     const counts = await Product.aggregate([
       { $unwind: "$category" },
       { $group: { _id: "$category", count: { $sum: 1 } } },
-      { $project: { _id: 0, category: "$_id", count: 1 } },
-      { $sort: { category: 1 } },
+      { $sort: { _id: 1 } } // Ordina per nome categoria
     ]);
-    res.json(counts);
+
+    // Trasforma l'array in un oggetto { categoria: count }
+    const countsObject = counts.reduce((acc, item) => {
+      acc[item._id] = item.count;
+      return acc;
+    }, {});
+
+    // Ora rispondi con l’oggetto pronto
+    res.json(countsObject);
   } catch (err) {
+    console.error("Error counting products per category:", err);
     res.status(500).json({ message: err.message });
   }
 };
+
 
 // GET /api/products/by-category/:category
 export const productsPerCategory = async (req, res) => {

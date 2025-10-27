@@ -208,24 +208,26 @@ const options = {
           tags: ["Products"],
           responses: {
             200: {
-              description: "Array with category name and product count",
+              description: "Object mapping each category name to its product count",
               content: {
                 "application/json": {
                   schema: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        category: { type: "string", example: "Electronics" },
-                        count: { type: "integer", example: 15 },
-                      },
+                    type: "object",
+                    additionalProperties: {
+                      type: "integer",
+                      example: 15
                     },
-                  },
-                },
-              },
-            },
-          },
-        },
+                    example: {
+                      "Electronics": 15,
+                      "Home Appliances": 8,
+                      "Books": 27
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       },
 
       "/api/products/by-category/{category}": {
