@@ -1,1 +1,60 @@
 // app global css in SCSS form
+@font-face {
+  font-family: "Wesayso";
+  src: url("/src/assets/WesaysopersonaluseBold-L3oOZ.otf") format("opentype");
+}
+
+@font-face {
+  font-family: "ByteChocolate";
+  src: url("src/assets/BiteChocolate.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Poppins-SemiBold";
+  src: url("src/assets/Poppins/Poppins-SemiBold.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Poppins-Medium";
+  src: url("src/assets/Poppins/Poppins-Medium.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Poppins-MediumItalic";
+  src: url("src/assets/Poppins/Poppins-MediumItalic.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Poppins-Regular";
+  src: url("src/assets/Poppins/Poppins-Regular.ttf") format("truetype");
+}
+
+.title-font {
+  font-family: "Poppins-SemiBold", sans-serif;
+}
+
+.subtitle-font {
+  font-family: "Poppins-Medium", sans-serif;
+}
+
+.paragraph-font {
+  font-family: "Poppins-Regular", sans-serif;
+}
+
+.code-font {
+  font-family: "Poppins-MediumItalic", sans-serif;
+}
+
+.bordered {
+  border: 5px solid green;
+}
+
+.sticky {
+  position: sticky;
+  top: 70px;
+  z-index: 1;
+}
+
+.icon {
+  max-width: 24px;
+  max-height: 24px;
+}
