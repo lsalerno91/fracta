@@ -75,6 +75,12 @@ export const useProductStore = defineStore('products', {
         } finally {
               this.loading = false
           }
+    },
+    selectProduct(product: Product) {
+      this.selectedProduct = product
+    },
+    clearSelection() {
+      this.selectedProduct = null
     }
   }
 })
