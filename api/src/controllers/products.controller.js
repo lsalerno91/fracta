@@ -4,7 +4,48 @@ import Product from "../models/product.model.js";
 // GET /api/products
 export const getProducts = async (req, res) => {
   try {
-    const products = await Product.find().sort({ createdAt: -1 });
+    const { q, category, brand, code, tags } = req.query;
+
+    const filter = {};
+
+    // 🔍 Ricerca testuale estesa (nome, descrizione, brand, codice, tag)
+    if (q) {
+      filter.$or = [
+        { name: { $regex: q, $options: "i" } },
+        { description: { $regex: q, $options: "i" } },
+        { brand: { $regex: q, $options: "i" } },
+        { code: { $regex: q, $options: "i" } },
+        { tags: { $regex: q, $options: "i" } },
+      ];
+    }
+
+    // 🏷️ Filtra per categoria
+    if (category) {
+      const categories = Array.isArray(category) ? category : [category];
+      filter.category = { $in: categories };
+    }
+
+    // 🏭 Filtra per brand
+    if (brand) {
+      const brands = Array.isArray(brand) ? brand : [brand];
+      filter.brand = { $in: brands };
+    }
+
+    // 🧾 Filtra per codice
+    if (code) {
+      const codes = Array.isArray(code) ? code : [code];
+      filter.code = { $in: codes };
+    }
+
+    // 🏷️ Filtra per tag
+    if (tags) {
+      const tagArray = Array.isArray(tags) ? tags : [tags];
+      filter.tags = { $in: tagArray };
+    }
+
+    // ✅ Esegui la query con i filtri
+    const products = await Product.find(filter).sort({ createdAt: -1 });
+
     res.json(products);
   } catch (err) {
     res.status(500).json({ message: err.message });

@@ -62,11 +62,76 @@ const options = {
       // Return the list of all products
       "/api/products": {
         get: {
-          summary: "Get all products",
+          summary: "Get all products (with filters and search)",
+          description: `
+              Retrieve all products with optional filters.
+              You can combine multiple filters (search, category, brand, code, tags).
+          `,
           tags: ["Products"],
+          parameters: [
+            {
+              name: "q",
+              in: "query",
+              description: "Search term (matches name, description, brand, code, or tags)",
+              required: false,
+              schema: { type: "string", example: "eco" },
+            },
+            {
+              name: "category",
+              in: "query",
+              description: "Filter by category (can be multiple)",
+              required: false,
+              schema: {
+                type: "array",
+                items: { type: "string" },
+                style: "form",
+                explode: true,
+                example: ["Electronics", "Accessories"],
+              },
+            },
+            {
+              name: "brand",
+              in: "query",
+              description: "Filter by brand (can be multiple)",
+              required: false,
+              schema: {
+                type: "array",
+                items: { type: "string" },
+                style: "form",
+                explode: true,
+                example: ["Sony", "Samsung"],
+              },
+            },
+            {
+              name: "code",
+              in: "query",
+              description: "Filter by product code (can be multiple)",
+              required: false,
+              schema: {
+                type: "array",
+                items: { type: "string" },
+                style: "form",
+                explode: true,
+                example: ["ABC123", "XYZ789"],
+              },
+            },
+            {
+              name: "tags",
+              in: "query",
+              description: "Filter by product tags (can be multiple)",
+              required: false,
+              schema: {
+                type: "array",
+                items: { type: "string" },
+                style: "form",
+                explode: true,
+                example: ["eco", "bio", "wireless"],
+              },
+            },
+          ],
           responses: {
             200: {
-              description: "List of all products in the catalog",
+              description: "List of products matching filters",
               content: {
                 "application/json": {
                   schema: {
@@ -76,6 +141,7 @@ const options = {
                 },
               },
             },
+            500: { description: "Internal server error" },
           },
         },
         post: {
