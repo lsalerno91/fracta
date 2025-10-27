@@ -4,6 +4,7 @@
 // -----------------------------------------------------
 
 import { defineStore } from 'pinia'
+import { useFiltersStore } from './filters';
 import { apiUrls } from '../utils/apiUrls.js'
 
 export interface Product {
@@ -26,6 +27,7 @@ interface State {
   selectedProduct: Product | null
   loading: boolean
   viewMode: 'card' | 'list'
+  countByCategory: Record<string, number>
   error: string | null
 }
 
@@ -37,27 +39,32 @@ export const useProductStore = defineStore('products', {
     selectedProduct: null,  
     loading: false,
     viewMode: 'card',
+    countByCategory: {},
     error: null
   }),
   actions: {
     // Fetch all products
-    async fetchProducts(): Promise<void> {
-      try {
-        this.loading = true
-        const res = await fetch(apiUrls.searchProducts)
-        if (!res.ok) throw new Error('Failed to fetch products')
-        const data: Product[] = await res.json()
-        this.products = data
-      } catch (err: unknown) {
-          if (err instanceof Error) {
-            this.error = err.message
-          } else {
-            this.error = String(err)
+    async fetchProducts() {
+          const filtersStore = useFiltersStore()
+          this.loading = true
+          try {
+            // costruisci query string dai filtri
+            const params = new URLSearchParams()
+            if (filtersStore.query) params.append('q', filtersStore.query)
+            if (filtersStore.category.length) params.append('category', filtersStore.category.join(','))
+            if (filtersStore.brand.length) params.append('brand', filtersStore.brand.join(','))
+            if (filtersStore.code.length) params.append('code', filtersStore.code.join(','))
+            if (filtersStore.tags.length) params.append('tags', filtersStore.tags.join(','))
+
+            const res = await fetch(`${apiUrls.searchProducts}?${params.toString()}`)
+            if (!res.ok) throw new Error('Failed to fetch products')
+            this.products = await res.json()
+          } catch (err: unknown) {
+            this.error = err instanceof Error ? err.message : String(err)
+          } finally {
+            this.loading = false
           }
-        } finally {
-              this.loading = false
-          }
-    },
+        },
     // Fetch categories 
     async fetchCategories(): Promise<void> {
       try {
@@ -81,6 +88,18 @@ export const useProductStore = defineStore('products', {
     },
     clearSelection() {
       this.selectedProduct = null
+    },
+    async countProductsPerCategory(): Promise<void> {
+      try {
+        this.loading = true
+        const res = await fetch(apiUrls.countProductsPerCategory)
+        if (!res.ok) throw new Error('Failed to fetch count by category')
+        this.countByCategory = await res.json()  // ✅ già oggetto
+      } catch (err: unknown) {
+        this.error = err instanceof Error ? err.message : String(err)
+      } finally {
+        this.loading = false
+      }
     }
   }
 })

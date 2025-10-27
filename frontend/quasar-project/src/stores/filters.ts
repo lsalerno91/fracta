@@ -7,6 +7,7 @@ interface FiltersState {
   category: string[]
   brand: string[]
   code: string[]
+  tags: string[]
   error: string | null
 }
 
@@ -17,6 +18,7 @@ export const useFiltersStore = defineStore('filters', {
     category: [],
     brand: [],
     code: [],
+    tags: [],
     error: null,
   }),
 

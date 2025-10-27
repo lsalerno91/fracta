@@ -164,7 +164,7 @@ const currentPath = computed(() => route.path)
 const menuItems = computed(() => {
   return productStore.categories.map(cat => ({
     name: cat,
-    count: productStore.products.filter(p => p.category.includes(cat)).length
+    count: productStore.countByCategory[cat] || 0
   }))
 })
 
@@ -175,6 +175,7 @@ const categoryNames = computed(() => productStore.categories)
 onMounted(async () => {
   await productStore.fetchProducts()     // Popola store.products
   await productStore.fetchCategories()   // Popola store.categories
+  await productStore.countProductsPerCategory() 
 })
 
 // Function to toggle the left drawer
@@ -226,6 +227,15 @@ async function fetchProductsByQuery(query: string) {
     productStore.loading = false
   }
 }
+
+// Watch profondo sui filtri
+watch(
+  () => ({ ...filtersStore }), // osserva tutto lo stato dei filtri
+  () => {
+    productStore.fetchProducts(); // richiama i prodotti filtrati
+  },
+  { deep: true, immediate: true } // deep per oggetti/array, immediate per eseguire subito al montaggio
+);
 
 // Logs
 console.log('Current path: ', currentPath)
