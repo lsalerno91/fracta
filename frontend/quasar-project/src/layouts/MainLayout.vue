@@ -38,7 +38,7 @@
               v-else
               name="clear"
               class="cursor-pointer"
-              @click="() => {}"
+              @click="cleanSearch"
             />
           </template>
         </q-input>
@@ -65,7 +65,7 @@
             color="white"
             class="q-mr-md"
           >
-            <q-badge color="red" floating>{{ "!!!cartStore.quantity()!!!" }}</q-badge>
+            <q-badge color="red" floating>{{ cartStore.totalItems }}</q-badge>
             <q-tooltip
               class="bg-primary text-white"
               transition-show="rotate"
@@ -91,7 +91,7 @@
           v-for="(item, index) in menuItems"
           :key="index"
           clickable
-          @click.prevent="() => {}"
+          @click.prevent="handleItemClick(item)"
           rel="noopener"
           href=""
         >
@@ -130,49 +130,104 @@
       color: #68bbe3
 </style>
 
-<script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
-import { useProductStore } from '../stores/products';
-import { icons } from '../utils/iconsPerCategory';
+<script lang="ts" setup>
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useProductStore } from '../stores/products'
+import { useCartStore } from '../stores/cart'
+import { useFiltersStore } from '../stores/filters'
+import { icons } from '../utils/iconsPerCategory'
+import { apiUrls } from '../utils/apiUrls'
 
 // Component name (for debugging and devtools)
 defineOptions({
   name: 'MainLayout'
 });
 
-const store = useProductStore(); // inizializza lo store
-const leftDrawerOpen = ref(true); // initial drawer state
-const search = ref('');
-const categoryNames = ref([]);
+// Stores
+const productStore = useProductStore()
+const cartStore = useCartStore()
+const filtersStore = useFiltersStore()
+
+// State
+const leftDrawerOpen = ref(true) // initial drawer state
+const search = ref('')
+//const categoryNames = ref([])
+
+// Router
+const router = useRouter()
+const route = useRoute()
+const currentPath = computed(() => route.path)
+
 
 // Generate menu items with product counts per category dinamically
 const menuItems = computed(() => {
-  return store.categories.map(cat => ({
+  return productStore.categories.map(cat => ({
     name: cat,
-    count: store.products.filter(p => p.category.includes(cat)).length
+    count: productStore.products.filter(p => p.category.includes(cat)).length
   }))
 })
 
+// Lista di nomi categorie per la toolbar dei filtri
+const categoryNames = computed(() => productStore.categories)
+
 // Carica prodotti e categorie al montaggio del componente
 onMounted(async () => {
-  await store.fetchProducts()     // Popola store.products
-  await store.fetchCategories()   // Popola store.categories
+  await productStore.fetchProducts()     // Popola store.products
+  await productStore.fetchCategories()   // Popola store.categories
 })
-
-// router per la navigazione, route per il current path
-//const router = useRouter();
-const route = useRoute();
-let currentPath = computed(() => route.path);
-console.log('Current path: ', currentPath);
 
 // Function to toggle the left drawer
 function toggleLeftDrawer () {
-  leftDrawerOpen.value = !leftDrawerOpen.value;
+  leftDrawerOpen.value = !leftDrawerOpen.value
 }
 
 // Function to get the right icon for each category
-const getIcon = (category: string): string => {
+function getIcon(category: string): string {
   return icons[category] || icons.default
 }
+
+// quando clicchi X per pulire la barra di ricerca, azzera il campo query nei filtri
+function cleanSearch() {
+  search.value = ''
+  filtersStore.resetQuery()
+}
+
+function handleItemClick(item: { name: string; count: number }) {
+  filtersStore.resetAll()
+  filtersStore.setCategory([item.name])
+  if (currentPath.value !== '/') {
+    router.push({ path: '/' })
+  }
+}
+
+// Sincronizza il search locale con lo store dei filtri
+watch(search, async (newQuery) => {
+  filtersStore.setQuery(newQuery)
+  await fetchProductsByQuery(newQuery)
+})
+
+// Funzione per chiamare l'API dinamicamente
+async function fetchProductsByQuery(query: string) {
+  try {
+    productStore.loading = true
+    const url = new URL(apiUrls.searchProducts)
+    if (query) {
+      url.searchParams.append('q', query)
+    }
+    const res = await fetch(url.toString())
+    if (!res.ok) throw new Error('Failed to fetch products')
+    const data = await res.json()
+    productStore.products = data
+  } catch (err: unknown) {
+    if (err instanceof Error) productStore.error = err.message
+    else productStore.error = String(err)
+  } finally {
+    productStore.loading = false
+  }
+}
+
+// Logs
+console.log('Current path: ', currentPath)
+
 </script>
