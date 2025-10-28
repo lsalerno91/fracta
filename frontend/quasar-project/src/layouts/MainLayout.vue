@@ -61,7 +61,7 @@
             flat
             round
             dense
-            icon="fa-solid fa-cart-shopping"
+            icon="shopping_cart"
             color="white"
             class="q-mr-md"
           >
@@ -137,7 +137,7 @@ import { useProductStore } from '../stores/products'
 import { useCartStore } from '../stores/cart'
 import { useFiltersStore } from '../stores/filters'
 import { icons } from '../utils/iconsPerCategory'
-import { apiUrls } from '../utils/apiUrls'
+import FiltersToolbar from '../components/FiltersToolbar.vue'
 
 // Component name (for debugging and devtools)
 defineOptions({
@@ -203,30 +203,9 @@ function handleItemClick(item: { name: string; count: number }) {
 }
 
 // Sincronizza il search locale con lo store dei filtri
-watch(search, async (newQuery) => {
+watch(search, (newQuery) => {
   filtersStore.setQuery(newQuery)
-  await fetchProductsByQuery(newQuery)
 })
-
-// Funzione per chiamare l'API dinamicamente
-async function fetchProductsByQuery(query: string) {
-  try {
-    productStore.loading = true
-    const url = new URL(apiUrls.searchProducts)
-    if (query) {
-      url.searchParams.append('q', query)
-    }
-    const res = await fetch(url.toString())
-    if (!res.ok) throw new Error('Failed to fetch products')
-    const data = await res.json()
-    productStore.products = data
-  } catch (err: unknown) {
-    if (err instanceof Error) productStore.error = err.message
-    else productStore.error = String(err)
-  } finally {
-    productStore.loading = false
-  }
-}
 
 // Watch profondo sui filtri
 watch(

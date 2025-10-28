@@ -4,11 +4,11 @@ import Product from "../models/product.model.js";
 // GET /api/products
 export const getProducts = async (req, res) => {
   try {
-    const { q, category, brand, code, tags } = req.query;
+    const { q, category, brand, code, tags, page = 1, limit = 20 } = req.query;
 
     const filter = {};
 
-    // 🔍 Ricerca testuale estesa (nome, descrizione, brand, codice, tag)
+    // 🔍 Ricerca testuale estesa (nome, descrizione, brand, codice, tag, categoria)
     if (q) {
       filter.$or = [
         { name: { $regex: q, $options: "i" } },
@@ -16,6 +16,7 @@ export const getProducts = async (req, res) => {
         { brand: { $regex: q, $options: "i" } },
         { code: { $regex: q, $options: "i" } },
         { tags: { $regex: q, $options: "i" } },
+        { category: { $regex: q, $options: "i" } },
       ];
     }
 
@@ -43,10 +44,34 @@ export const getProducts = async (req, res) => {
       filter.tags = { $in: tagArray };
     }
 
-    // ✅ Esegui la query con i filtri
-    const products = await Product.find(filter).sort({ createdAt: -1 });
+    // 📊 Pagination parameters
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
 
-    res.json(products);
+    // ✅ Esegui la query con i filtri e paginazione
+    // Usa _id come ordinamento secondario per garantire consistenza tra le pagine
+    const [products, totalCount] = await Promise.all([
+      Product.find(filter)
+        .sort({ createdAt: -1, _id: -1 })
+        .skip(skip)
+        .limit(limitNum),
+      Product.countDocuments(filter)
+    ]);
+
+    const totalPages = Math.ceil(totalCount / limitNum);
+
+    res.json({
+      products,
+      pagination: {
+        currentPage: pageNum,
+        totalPages,
+        totalCount,
+        limit: limitNum,
+        hasNext: pageNum < totalPages,
+        hasPrev: pageNum > 1
+      }
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

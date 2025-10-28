@@ -32,7 +32,7 @@
     </div>
 
     <!-- Pagination -->
-    <ProductPagination v-if="productStore.totalPages > 1" />
+    <ProductPagination v-if="productStore.pagination.totalPages > 1" />
 
     <!-- Drawer del prodotto -->
     <ProductDrawer v-if="productStore.selectedProduct" />
@@ -76,7 +76,8 @@
 import { useProductStore } from '../stores/products';
 import ProductCard from '../components/ProductCard.vue';
 import ProductDrawer from '../components/ProductDrawer.vue';
-//import TableHeader from "../components/ProductTable.vue";
+import ProductPagination from '../components/ProductPagination.vue';
+import TableHeader from '../components/ProductTable.vue';
 
 defineOptions({
   name: 'IndexPage'

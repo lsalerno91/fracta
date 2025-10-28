@@ -26,23 +26,32 @@ export const useFiltersStore = defineStore('filters', {
     // Set singoli filtri
     setQuery(query: string | null) {
       this.query = query
+      this.page = 0 // Reset page when query changes
     },
     setPage(page: number) {
       this.page = page
     },
     setCategory(category: string[]) {
       this.category = category
+      this.page = 0 // Reset page when category changes
     },
     addCategory(category: string) {
       if (!this.category.includes(category)) {
         this.category.push(category)
+        this.page = 0 // Reset page when category changes
       }
     },
     setBrand(brand: string[]) {
       this.brand = brand
+      this.page = 0 // Reset page when brand changes
     },
     setCode(code: string[]) {
       this.code = code
+      this.page = 0 // Reset page when code changes
+    },
+    setTags(tags: string[]) {
+      this.tags = tags
+      this.page = 0 // Reset page when tags change
     },
     // Reset dei singoli filtri
     resetQuery() {
