@@ -1,21 +1,48 @@
 <script lang='ts' setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useFiltersStore } from '../stores/filters'
 
 // --- Tipi ---
 type Option = string
+type FilterType = 'Categoria' | 'Brand' | 'Codice'
 
 const filtersStore = useFiltersStore()
 
 // --- Props ---
 const props = defineProps<{
   items: Option[]
-  label: string
+  label: FilterType
 }>()
 
 // --- Stato locale ---
 const selectedItems = ref<Option[]>([])
 const filteredItems = ref<Option[]>([...props.items])
+
+// --- Computed per mappare le azioni dello store ---
+const storeActions = computed(() => {
+  switch (props.label) {
+    case 'Categoria':
+      return {
+        set: filtersStore.setCategory,
+        reset: filtersStore.resetCategory,
+        current: () => filtersStore.category
+      }
+    case 'Brand':
+      return {
+        set: filtersStore.setBrand,
+        reset: filtersStore.resetBrand,
+        current: () => filtersStore.brand
+      }
+    case 'Codice':
+      return {
+        set: filtersStore.setCode,
+        reset: filtersStore.resetCode,
+        current: () => filtersStore.code
+      }
+    default:
+      throw new Error(`Filter type "${props.label}" not supported`)
+  }
+})
 
 // --- Aggiorna filteredItems quando cambiano le props.items ---
 watch(
@@ -29,54 +56,33 @@ watch(
 watch(
   () => selectedItems.value,
   (newVal) => {
-    if (props.label === 'Categoria') {
-      if (selectedItems.value?.length) filtersStore.setCategory(newVal)
-      else filtersStore.resetCategory()
-    } else if (props.label === 'Brand') {
-      if (selectedItems.value?.length) filtersStore.setBrand(newVal)
-      else filtersStore.resetBrand()
-    } else if (props.label === 'Codice') {
-      if (selectedItems.value?.length) filtersStore.setCode(newVal)
-      else filtersStore.resetCode()
+    const actions = storeActions.value
+    if (newVal?.length) {
+      actions.set(newVal)
+    } else {
+      actions.reset()
     }
   }
 )
 
 // --- Aggiorna selectedItems quando cambiano i filtri nello store ---
-if (props.label === 'Categoria') {
-  watch(
-    () => filtersStore.category,
-    (newVal) => {
-      if (filtersStore.category !== selectedItems.value) {
-        selectedItems.value = [...filtersStore.category]
-      }
-    },
-    { deep: true }
-  )
-} else if (props.label === 'Brand') {
-  watch(
-    () => filtersStore.brand,
-    (newVal) => {
-      if (filtersStore.brand !== selectedItems.value) {
-        selectedItems.value = [...filtersStore.brand]
-      }
-    },
-    { deep: true }
-  )
-} else if (props.label === 'Codice') {
-  watch(
-    () => filtersStore.code,
-    (newVal) => {
-      if (filtersStore.code !== selectedItems.value) {
-        selectedItems.value = [...filtersStore.code]
-      }
-    },
-    { deep: true }
-  )
-}
+watch(
+  () => storeActions.value.current(),
+  (newStoreValue) => {
+    // Evita loop infiniti confrontando i valori
+    const currentSelected = selectedItems.value
+    const areEqual = currentSelected.length === newStoreValue.length && 
+                    currentSelected.every(item => newStoreValue.includes(item))
+    
+    if (!areEqual) {
+      selectedItems.value = [...newStoreValue]
+    }
+  },
+  { deep: true }
+)
 
 // --- Funzione di filtro per Q-Select ---
-const filterFn = (val: string, update: (fn: () => void) => void, abort: () => void) => {
+const filterFn = (val: string, update: (fn: () => void) => void) => {
   update(() => {
     if (!val || val.length < 2) {
       filteredItems.value = [...props.items]
@@ -85,7 +91,7 @@ const filterFn = (val: string, update: (fn: () => void) => void, abort: () => vo
 
     const needle = val.toLowerCase()
     filteredItems.value = props.items.filter(
-      (v) => v && v.toLowerCase().includes(needle)
+      (item) => item && item.toLowerCase().includes(needle)
     )
   })
 }
