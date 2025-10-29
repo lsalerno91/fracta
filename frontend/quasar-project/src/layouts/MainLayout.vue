@@ -14,7 +14,14 @@
   <q-layout view="hHh lpR fFf">
     <q-header elevated class="bg-transparent">
       <q-toolbar class="bg-primary glossy text-white flex-center">
-        <q-btn dense flat round icon="menu" @click="toggleLeftDrawer" />
+        <q-btn 
+          dense 
+          flat 
+          round 
+          icon="menu" 
+          @click="toggleLeftDrawer"
+          v-show="currentPath !== '/preventivo'"
+        />
 
         <q-toolbar-title class="title-font">
           <RouterLink to="/">
@@ -82,7 +89,12 @@
       />
     </q-header>
 
-    <q-drawer v-model="leftDrawerOpen" side="left" elevated>
+    <q-drawer 
+      v-model="leftDrawerOpen" 
+      side="left" 
+      elevated
+      v-show="currentPath !== '/preventivo'"
+    >
       <q-list>
         <q-item-label header>Categorie</q-item-label>
 
@@ -173,9 +185,14 @@ const categoryNames = computed(() => productStore.categories)
 
 // Carica prodotti e categorie al montaggio del componente
 onMounted(async () => {
-  await productStore.fetchProducts()     // Popola store.products
-  await productStore.fetchCategories()   // Popola store.categories
-  await productStore.countProductsPerCategory() 
+  try {
+    await productStore.fetchProducts()     // Popola store.products
+    await productStore.fetchCategories()   // Popola store.categories
+    await productStore.countProductsPerCategory() 
+  } catch (error) {
+    // Gli errori sono già gestiti nei singoli metodi del store
+    console.warn('Some API calls failed during initialization:', error)
+  }
 })
 
 // Function to toggle the left drawer
@@ -215,6 +232,13 @@ watch(
   },
   { deep: true, immediate: true } // deep per oggetti/array, immediate per eseguire subito al montaggio
 );
+
+// Watch per chiudere il drawer nella pagina del preventivo
+watch(currentPath, (newPath) => {
+  if (newPath === '/preventivo') {
+    leftDrawerOpen.value = false
+  }
+})
 
 // Logs
 console.log('Current path: ', currentPath)

@@ -1,7 +1,7 @@
 <script setup>
-import { ref, watch } from "vue";
-import { useProductStore } from "../stores/products";
-import { useCartStore } from "../stores/cart";
+import { ref, watch } from 'vue';
+import { useProductStore } from '../stores/products';
+import { useCartStore } from '../stores/cart';
 //import { handleDownload } from "../utils/functions.js";
 
 const productStore = useProductStore();
@@ -16,25 +16,25 @@ let selectAll = ref(false);
 const toggleSortProd = () => {
   sortAscendingProd.value = !sortAscendingProd.value;
   if (sortAscendingProd.value == false) {
-    productStore.sortResults("name", "ascending");
+    productStore.sortResults('name', 'ascending');
   } else {
-    productStore.sortResults("name", "descending");
+    productStore.sortResults('name', 'descending');
   }
 };
 const toggleSortBrand = () => {
   sortAscendingBrand.value = !sortAscendingBrand.value;
   if (sortAscendingBrand.value == false) {
-    productStore.sortResults("brand", "ascending");
+    productStore.sortResults('brand', 'ascending');
   } else {
-    productStore.sortResults("brand", "descending");
+    productStore.sortResults('brand', 'descending');
   }
 };
 const toggleSortCode = () => {
   toggleSortCode.value = !toggleSortCode.value;
   if (toggleSortCode.value == false) {
-    productStore.sortResults("code", "ascending");
+    productStore.sortResults('code', 'ascending');
   } else {
-    productStore.sortResults("code", "descending");
+    productStore.sortResults('code', 'descending');
   }
 };
 
