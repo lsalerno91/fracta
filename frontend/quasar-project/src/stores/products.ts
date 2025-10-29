@@ -29,6 +29,12 @@ export interface PaginationInfo {
   hasPrev: boolean
 }
 
+export interface ErrorInfo {
+  message: string
+  type: 'network' | 'server' | 'client' | 'unknown'
+  statusCode?: number
+}
+
 interface State {
   products: Product[]
   categories: string[]
@@ -37,7 +43,7 @@ interface State {
   loading: boolean
   viewMode: 'card' | 'list'
   countByCategory: Record<string, number>
-  error: string | null
+  error: ErrorInfo | null
 }
 
 export const useProductStore = defineStore('products', {
@@ -58,11 +64,32 @@ export const useProductStore = defineStore('products', {
     countByCategory: {},
     error: null
   }),
+  getters: {
+    // Check if there's a server or network error
+    hasServerError: (state) => {
+      return state.error?.type === 'server' || state.error?.type === 'network'
+    },
+    // Check if the app is in an error state that should show the error display
+    shouldShowErrorDisplay: (state) => {
+      return state.error && (state.error.type === 'server' || state.error.type === 'network')
+    }
+  },
   actions: {
+    // Helper function to create error info
+    createError(message: string, type: ErrorInfo['type'], statusCode?: number): ErrorInfo {
+      return { message, type, statusCode }
+    },
+    
+    // Clear error state
+    clearError() {
+      this.error = null
+    },
+    
     // Fetch all products
     async fetchProducts() {
           const filtersStore = useFiltersStore()
           this.loading = true
+          this.error = null // Clear previous errors
           try {
             // costruisci query string dai filtri
             const params = new URLSearchParams()
@@ -79,7 +106,23 @@ export const useProductStore = defineStore('products', {
             console.log('Fetching products with params:', params.toString())
 
             const res = await fetch(`${apiUrls.searchProducts}?${params.toString()}`)
-            if (!res.ok) throw new Error('Failed to fetch products')
+            
+            if (!res.ok) {
+              const statusCode = res.status
+              let errorType: ErrorInfo['type'] = 'server'
+              
+              if (statusCode >= 500) {
+                errorType = 'server'
+              } else if (statusCode >= 400) {
+                errorType = 'client'
+              }
+              
+              throw this.createError(
+                `Errore durante il caricamento dei prodotti (${statusCode})`, 
+                errorType, 
+                statusCode
+              )
+            }
             
             const data = await res.json()
             
@@ -100,7 +143,17 @@ export const useProductStore = defineStore('products', {
               }
             }
           } catch (err: unknown) {
-            this.error = err instanceof Error ? err.message : String(err)
+            if (err instanceof Error && 'type' in err) {
+              // If it's already our custom error
+              this.error = err as ErrorInfo
+            } else if (err instanceof TypeError && err.message.includes('fetch')) {
+              // Network error (offline, DNS failure, etc.)
+              this.error = this.createError('Connessione al server non disponibile', 'network')
+            } else {
+              // Generic error
+              const message = err instanceof Error ? err.message : String(err)
+              this.error = this.createError(message, 'unknown')
+            }
           } finally {
             this.loading = false
           }
@@ -109,19 +162,33 @@ export const useProductStore = defineStore('products', {
     async fetchCategories(): Promise<void> {
       try {
         this.loading = true
+        this.error = null
         const res = await fetch(apiUrls.listCategories)
-        if (!res.ok) throw new Error('Failed to fetch categories')
+        
+        if (!res.ok) {
+          const statusCode = res.status
+          const errorType: ErrorInfo['type'] = statusCode >= 500 ? 'server' : 'client'
+          throw this.createError(
+            `Errore durante il caricamento delle categorie (${statusCode})`, 
+            errorType, 
+            statusCode
+          )
+        }
+        
         const data: string[] = await res.json()
         this.categories = data
-            } catch (err: unknown) {
-          if (err instanceof Error) {
-            this.error = err.message
-          } else {
-            this.error = String(err)
-          }
-        } finally {
-              this.loading = false
-          }
+      } catch (err: unknown) {
+        if (err instanceof Error && 'type' in err) {
+          this.error = err as ErrorInfo
+        } else if (err instanceof TypeError && err.message.includes('fetch')) {
+          this.error = this.createError('Connessione al server non disponibile', 'network')
+        } else {
+          const message = err instanceof Error ? err.message : String(err)
+          this.error = this.createError(message, 'unknown')
+        }
+      } finally {
+        this.loading = false
+      }
     },
     selectProduct(product: Product) {
       this.selectedProduct = product
@@ -132,11 +199,29 @@ export const useProductStore = defineStore('products', {
     async countProductsPerCategory(): Promise<void> {
       try {
         this.loading = true
+        this.error = null
         const res = await fetch(apiUrls.countProductsPerCategory)
-        if (!res.ok) throw new Error('Failed to fetch count by category')
-        this.countByCategory = await res.json()  // ✅ già oggetto
+        
+        if (!res.ok) {
+          const statusCode = res.status
+          const errorType: ErrorInfo['type'] = statusCode >= 500 ? 'server' : 'client'
+          throw this.createError(
+            `Errore durante il caricamento dei conteggi (${statusCode})`, 
+            errorType, 
+            statusCode
+          )
+        }
+        
+        this.countByCategory = await res.json()
       } catch (err: unknown) {
-        this.error = err instanceof Error ? err.message : String(err)
+        if (err instanceof Error && 'type' in err) {
+          this.error = err as ErrorInfo
+        } else if (err instanceof TypeError && err.message.includes('fetch')) {
+          this.error = this.createError('Connessione al server non disponibile', 'network')
+        } else {
+          const message = err instanceof Error ? err.message : String(err)
+          this.error = this.createError(message, 'unknown')
+        }
       } finally {
         this.loading = false
       }
