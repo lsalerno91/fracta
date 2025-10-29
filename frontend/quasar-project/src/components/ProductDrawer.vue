@@ -66,7 +66,8 @@
                 <!-- Immagini del prodotto -->
                 <q-img
                   class="fit-image"
-                  :src="productStore.selectedProduct.image_url"
+                  :src="productImageSrc"
+                  @error="handleImageError"
                 />
               </div>
             </q-carousel-slide>
@@ -147,13 +148,17 @@
 import { ref, computed } from 'vue';
 import { useProductStore } from '../stores/products';
 import { useCartStore } from '../stores/cart';
+import { useProductImage } from '../composables/useProductImage';
 //import { handleDownload } from "../utils/functions.js";
 
-const productStore = useProductStore()
+const productStore = useProductStore();
 const cartStore = useCartStore();
 
 const rightDrawerOpen = ref(false);
 const slide = ref(1);
+
+// Image handling using composable
+const { productImageSrc, handleImageError } = useProductImage(() => productStore.selectedProduct);
 
 const closeProductDrawer = () => {
   rightDrawerOpen.value = false;
@@ -166,11 +171,11 @@ const closeProductDrawer = () => {
 const drawerWidth = computed(() => Math.min(window.innerWidth * 0.7, 1200));
 
 // gestisce l'aggiunta/rimozione dal preventivo
-// const handleCartClick = () => {
-//   if (cartStore.isInCart(productStore.selectedProduct._id)) {
-//     cartStore.removeFromCart(productStore.selectedProduct._id);
-//   } else {
-//     cartStore.addToCart(productStore.selectedProduct);
-//   }
-// };
+const handleCartClick = () => {
+  if (cartStore.isInCart(productStore.selectedProduct._id)) {
+    cartStore.removeFromCart(productStore.selectedProduct._id);
+  } else {
+    cartStore.addToCart(productStore.selectedProduct);
+  }
+};
 </script>

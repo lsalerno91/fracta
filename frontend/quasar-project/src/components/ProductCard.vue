@@ -12,8 +12,9 @@
       <q-img
         class="col my-img cursor-pointer"
         :ratio="16 / 9"
-        :src="product.image_url"
+        :src="productImageSrc"
         @click="productStore.selectProduct(product)"
+        @error="handleImageError"
       />
 
       <q-card-actions vertical class="justify-around">
@@ -86,16 +87,16 @@ const cartStore = useCartStore();
 // Props
 const props = defineProps<{ product: Product }>()
 
+// Computed: immagine del prodotto con fallback
+const productImageSrc = computed(() => {
+  return props.product.image_url || '/src/assets/img_placeholder.jpg'
+})
+
 // Local state
 const expanded = ref(false);
 
 // Computed: controlla se il prodotto è già nel carrello
 const isFav = computed(() => cartStore.isInCart(props.product._id))
-//const isFav = ref(cartStore.isInCart(props.product._id));
-
-// watchEffect(() => {
-//   isFav.value = cartStore.isInCart(props.product._id);
-// });
 
 // Functions
 function handleCartClick() {
@@ -103,6 +104,13 @@ function handleCartClick() {
     cartStore.removeFromCart(props.product._id)
   } else {
     cartStore.addToCart(props.product)
+  }
+}
+
+function handleImageError(event: Event) {
+  const target = event.target as HTMLImageElement
+  if (target) {
+    target.src = '/src/assets/img_placeholder.jpg'
   }
 }
 </script>

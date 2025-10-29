@@ -20,12 +20,11 @@
           <q-item-section avatar>
             <q-avatar size="60px" square>
               <img 
-                v-if="product.image_url" 
-                :src="product.image_url" 
+                :src="getProductImageSrc(product.image_url)" 
                 :alt="product.name"
                 style="object-fit: cover;"
+                @error="handleImageError"
               />
-              <q-icon v-else name="inventory_2" size="30px" color="grey-5" />
             </q-avatar>
           </q-item-section>
 
@@ -142,6 +141,19 @@ const removeProduct = (productId: string) => {
 
 const clearCart = () => {
   cartStore.clearCart()
+}
+
+// Helper function for product images
+const getProductImageSrc = (imageUrl?: string) => {
+  return imageUrl || '/src/assets/img_placeholder.jpg'
+}
+
+const handleImageError = (event: Event) => {
+  const target = event.target as HTMLImageElement
+  if (target) {
+    target.src = '/src/assets/img_placeholder.jpg'
+    console.warn('Failed to load image, using placeholder')
+  }
 }
 </script>
 
