@@ -62,27 +62,116 @@
         </div>
         <q-space />
 
-        <!-- Preventivo -->
-        <RouterLink to="/preventivo">
-          <q-btn
-            flat
-            round
-            dense
-            icon="shopping_cart"
-            color="white"
-            class="q-mr-md"
+        <!-- Navigation Buttons -->
+        <div class="row q-gutter-sm q-mr-md">
+          <RouterLink to="/" class="text-decoration-none">
+            <q-btn
+              flat
+              no-caps
+              :color="currentPath === '/' ? 'yellow' : 'white'"
+              :class="{ 'text-weight-bold': currentPath === '/' }"
+              label="Catalogo"
+            />
+          </RouterLink>
+          <RouterLink to="/preventivo" class="text-decoration-none">
+            <q-btn
+              flat
+              no-caps
+              :color="currentPath === '/preventivo' ? 'yellow' : 'white'"
+              :class="{ 'text-weight-bold': currentPath === '/preventivo' }"
+              label="Preventivo"
+            />
+          </RouterLink>
+        </div>
+
+        <!-- Cart Dropdown -->
+        <q-btn
+          flat
+          dense
+          icon="shopping_cart"
+          color="white"
+          @mouseenter="openCartDropdown"
+          @mouseleave="closeCartDropdown"
+        >
+        <q-badge color="red" floating>{{ cartStore.quantity() }}</q-badge>
+
+
+          <q-menu
+            v-model="cartDropdownOpen"
+            anchor="bottom right"
+            self="top right"
+            @mouseenter="openCartDropdown"
+            @mouseleave="closeCartDropdown"
           >
-            <q-badge color="red" floating>{{ cartStore.totalItems }}</q-badge>
-            <q-tooltip
-              class="bg-primary text-white"
-              transition-show="rotate"
-              transition-hide="rotate"
+            <div 
+              class="cart-dropdown"
+              @mouseenter="openCartDropdown"
+              @mouseleave="closeCartDropdown"
             >
-              Preventivo
-            </q-tooltip>
-          </q-btn>
-        </RouterLink>
+            <div class="text-h6 q-pa-md text-primary">
+              Carrello ({{ cartStore.totalItems }} {{ cartStore.totalItems === 1 ? 'articolo' : 'articoli' }})
+            </div>
+            
+            <q-separator />
+            
+            <div v-if="cartStore.products.length === 0" class="text-center q-pa-lg text-grey-6">
+              <q-icon name="shopping_cart_outlined" size="2em" />
+              <div class="q-mt-sm">Carrello vuoto</div>
+            </div>
+            
+            <div v-else>
+              <q-list separator class="cart-items-preview">
+                <q-item
+                  v-for="product in cartStore.cart.slice(0, 5)"
+                  :key="product._id"
+                  class="q-pa-sm"
+                >
+                  <q-item-section avatar>
+                    <q-avatar size="40px" square>
+                      <img 
+                        :src="product.image_url || '/src/assets/img_placeholder.jpg'" 
+                        :alt="product.name"
+                        style="object-fit: cover;"
+                      />
+                    </q-avatar>
+                  </q-item-section>
+                  
+                  <q-item-section>
+                    <q-item-label class="text-weight-medium" style="font-size: 0.9em;">
+                      {{ product.name }}
+                    </q-item-label>
+                    <q-item-label caption>
+                      {{ product.brand }}
+                    </q-item-label>
+                  </q-item-section>
+                </q-item>
+                
+                <q-item v-if="cartStore.cart.length > 5" class="text-center text-grey-6 q-py-sm">
+                  <q-item-section>
+                    ... e altri {{ cartStore.cart.length - 5 }} {{ cartStore.cart.length - 5 === 1 ? 'articolo' : 'articoli' }}
+                  </q-item-section>
+                </q-item>
+              </q-list>
+              
+              <q-separator />
+              
+              <div class="q-pa-md">
+                <RouterLink to="/preventivo" class="text-decoration-none">
+                  <q-btn
+                    color="primary"
+                    label="Vai al Preventivo"
+                    icon="arrow_forward"
+                    class="full-width"
+                    no-caps
+                  />
+                </RouterLink>
+              </div>
+            </div>
+          </div>
+          </q-menu>
+        </q-btn>
       </q-toolbar>
+
       <FiltersToolbar
         :categories="categoryNames"
         v-if="currentPath !== '/preventivo'"
@@ -140,6 +229,26 @@
       color: black
     :focus::placeholder
       color: #68bbe3
+
+// Remove text decoration from router links
+.text-decoration-none
+  text-decoration: none
+
+// Cart dropdown styles
+.cart-dropdown
+  min-width: 350px
+  max-width: 400px
+
+.cart-items-preview
+  max-height: 300px
+  overflow-y: auto
+
+// Cart badge positioning
+.cart-badge
+  position: absolute
+  top: 8px
+  right: 8px
+  z-index: 1
 </style>
 
 <script lang="ts" setup>
@@ -164,6 +273,7 @@ const filtersStore = useFiltersStore()
 // State
 const leftDrawerOpen = ref(true) // initial drawer state
 const search = ref('')
+const cartDropdownOpen = ref(false) // cart dropdown state
 //const categoryNames = ref([])
 
 // Router
@@ -239,6 +349,15 @@ watch(currentPath, (newPath) => {
     leftDrawerOpen.value = false
   }
 })
+
+// Cart dropdown hover functions
+const openCartDropdown = () => {
+  cartDropdownOpen.value = true
+}
+
+const closeCartDropdown = () => {
+  cartDropdownOpen.value = false
+}
 
 // Logs
 console.log('Current path: ', currentPath)
