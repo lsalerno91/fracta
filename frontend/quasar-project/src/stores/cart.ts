@@ -20,6 +20,8 @@ export const useCartStore = defineStore('cart', {
   getters: {
     totalItems: (state) => state.products.length,
     totalSelectedItems: (state) => state.selectedProducts.length,
+    cart: (state) => state.products, // Add cart getter for compatibility
+    quantity: (state) => () => state.products.reduce((total, product) => total + product.quantity, 0),
     isInCart: (state) => (id: string) => state.products.some(p => p._id === id),
     isSelected: (state) => (id: string) => state.selectedProducts.some(p => p._id === id)
   },
